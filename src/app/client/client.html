@@ -1,0 +1,45 @@
+<div class="client">
+  <div #miniMap class="mini-map"></div>
+
+  <button class="recenter" (click)="recenter()" title="Karte auf mich zentrieren">📍 Auf mich</button>
+
+  <div class="panel">
+    <div class="head">
+      <span class="me">🙂 {{ id }}</span>
+      <span class="live" [class.on]="connected()">{{ connected() ? '● live' : '○ offline' }}</span>
+    </div>
+
+    @if (!found()) {
+      <div class="warn">Person „{{ id }}" nicht gefunden. Stimmt die ID in der URL?</div>
+    }
+
+    <div class="status-box" [style.background]="statusColor()">
+      {{ statusText() }}
+    </div>
+
+    <div class="instruction">{{ instruction() }}</div>
+
+    <div class="section">
+      <div class="label">Mein Status</div>
+      <div class="status-btns">
+        <button class="ok" (click)="setStatus('OK')">✅ Ok</button>
+        <button class="help" (click)="setStatus('HELP')">🙋 Hilfe</button>
+        <button class="emergency" (click)="setStatus('EMERGENCY')">🆘 Notfall</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="label">Bewegen (Test) — oder auf die Karte tippen</div>
+      <div class="dpad">
+        <button (click)="nudge(step, 0)">↑</button>
+        <div class="dpad-mid">
+          <button (click)="nudge(0, -step)">←</button>
+          <button (click)="nudge(0, step)">→</button>
+        </div>
+        <button (click)="nudge(-step, 0)">↓</button>
+      </div>
+    </div>
+
+    <a class="back" href="/">← zur Leitstelle</a>
+  </div>
+</div>
