@@ -1,0 +1,402 @@
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+.map.drawing {
+  cursor: crosshair;
+}
+
+.dashboard {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+  width: 330px;
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  background: rgba(18, 18, 20, 0.92);
+  color: #fff;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+.title {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.live {
+  float: right;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e74c3c;
+}
+
+.live.on {
+  color: #2ecc71;
+}
+
+.panel {
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.panel h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+.help {
+  font-size: 12px;
+  line-height: 1.45;
+  opacity: 0.65;
+  margin: 6px 0 0;
+}
+
+.on-text {
+  color: #2ecc71;
+  opacity: 1;
+}
+
+/* Lage */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.stat {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  color: #111;
+}
+
+.stat.ok { background: #2ecc71; }
+.stat.help { background: #f39c12; }
+.stat.progress { background: #3498db; color: #fff; }
+.stat.emergency { background: #e74c3c; color: #fff; }
+
+/* Ziel-Umschalter */
+.seg {
+  display: flex;
+  gap: 6px;
+}
+
+.seg button {
+  flex: 1;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.seg button.active {
+  background: #2d8cf0;
+}
+
+/* Werkzeuge */
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tools.secondary {
+  margin-top: 6px;
+}
+
+.tools button {
+  border: 0;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.tools button.ghost {
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 12px;
+}
+
+.tools button.active {
+  background: #2d8cf0;
+  box-shadow: 0 0 0 2px rgba(45, 140, 240, 0.5);
+}
+
+.tools button.danger:hover {
+  background: #c0392b;
+}
+
+.tools button:hover {
+  filter: brightness(1.15);
+}
+
+.hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  background: rgba(45, 140, 240, 0.18);
+  padding: 7px 9px;
+  border-radius: 6px;
+}
+
+/* Aktive Befehle */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.row .x {
+  border: 0;
+  background: rgba(231, 76, 60, 0.85);
+  color: #fff;
+  border-radius: 5px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.row .x:hover {
+  background: #e74c3c;
+}
+
+/* Helfer / Chaperone */
+.bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  margin: 10px 0;
+}
+
+.chap-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+
+.chap-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.chap-id {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.badge.busy {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.badge.idle {
+  background: rgba(255, 255, 255, 0.15);
+  color: #cfcfcf;
+}
+
+.chap-perms {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.perm-label {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+/* Toggle-Pill: grau = aus, grün = an */
+.pill {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #cfcfcf;
+  border-radius: 14px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pill::before {
+  content: '○ ';
+  opacity: 0.7;
+}
+
+.pill.on {
+  background: #2ecc71;
+  border-color: #2ecc71;
+  color: #06320f;
+  font-weight: 600;
+}
+
+.pill.on::before {
+  content: '✓ ';
+}
+
+.pill:hover {
+  filter: brightness(1.1);
+}
+
+/* Helfer-Modul: Modus, Bereich, Log */
+.chap-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.seg.small {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.seg.small button {
+  flex: 1;
+  border: 0;
+  border-radius: 5px;
+  padding: 4px 6px;
+  font-size: 12px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.seg.small button.active {
+  background: #2d8cf0;
+}
+
+.area-btn {
+  border: 1px dashed #8e44ad;
+  background: rgba(142, 68, 173, 0.15);
+  color: #d9b3ff;
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 12px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.area-btn.active {
+  background: #8e44ad;
+  color: #fff;
+}
+
+.log-row {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.log-time {
+  opacity: 0.5;
+  min-width: 64px;
+}
+
+/* Person selbst steuern */
+.panel.control {
+  background: rgba(241, 196, 15, 0.12);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.status-btns {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.status-btns button {
+  flex: 1;
+  border: 0;
+  border-radius: 7px;
+  padding: 10px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+}
+
+.status-btns .ok { background: #2ecc71; color: #06320f; }
+.status-btns .help { background: #f39c12; color: #3a2600; }
+.status-btns .emergency { background: #e74c3c; }
+
+.dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.dpad-mid {
+  display: flex;
+  gap: 48px;
+}
+
+.dpad button {
+  width: 46px;
+  height: 38px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.dpad button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.release {
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.release:hover {
+  background: rgba(255, 255, 255, 0.28);
+}

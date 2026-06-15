@@ -1,0 +1,159 @@
+.client {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  font-family: system-ui, sans-serif;
+}
+
+.mini-map {
+  width: 100%;
+  height: 100%;
+}
+
+.panel {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  width: min(320px, calc(100vw - 32px));
+  background: rgba(18, 18, 20, 0.92);
+  color: #fff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.recenter {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(18, 18, 20, 0.92);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.recenter:hover {
+  filter: brightness(1.2);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.me {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.live {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e74c3c;
+}
+
+.live.on {
+  color: #2ecc71;
+}
+
+.warn {
+  background: #e74c3c;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.status-box {
+  text-align: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: #06320f;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.instruction {
+  text-align: center;
+  font-size: 15px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.section {
+  margin-bottom: 12px;
+}
+
+.label {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-bottom: 6px;
+}
+
+.status-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.status-btns button {
+  flex: 1;
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+}
+
+.status-btns .ok { background: #2ecc71; color: #06320f; }
+.status-btns .help { background: #f39c12; color: #3a2600; }
+.status-btns .emergency { background: #e74c3c; }
+
+.dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.dpad-mid {
+  display: flex;
+  gap: 56px;
+}
+
+.dpad button {
+  width: 52px;
+  height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.dpad button:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.back {
+  display: inline-block;
+  margin-top: 4px;
+  color: #8ecbff;
+  font-size: 13px;
+  text-decoration: none;
+}
