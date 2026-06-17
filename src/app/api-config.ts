@@ -16,8 +16,8 @@ function resolveBackendBase(): string {
   if (host === 'localhost' || host === '127.0.0.1') {
     return 'http://localhost:8080';
   }
-  // TODO: hier optional deine (statische) ngrok-URL eintragen:
-  return 'https://DEINE-NGROK-URL.ngrok-free.app';
+  // ngrok-URL des lokalen Backends (bei ngrok-Neustart hier aktualisieren):
+  return 'https://embargo-sappy-fragment.ngrok-free.dev';
 }
 
 export const API_BASE = resolveBackendBase();
