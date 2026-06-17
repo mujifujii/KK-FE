@@ -1,5 +1,8 @@
 <div class="map-wrapper">
-  <div class="dashboard">
+  <button class="dash-toggle" (click)="dashboardOpen.set(!dashboardOpen())">
+    {{ dashboardOpen() ? '✕' : '☰' }}
+  </button>
+  <div class="dashboard" [class.hidden]="!dashboardOpen()">
     <div class="title">
       <strong>KrautKontroll</strong> · Leitstelle
       <span class="live" [class.on]="connected()">{{ connected() ? '● live' : '○ offline' }}</span>
