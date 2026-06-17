@@ -8,221 +8,215 @@
       <span class="live" [class.on]="connected()">{{ connected() ? '● live' : '○ offline' }}</span>
     </div>
 
-    <!-- Lage -->
-    <section class="panel">
-      <h4>Lage · {{ watcherCount() }} Personen</h4>
-      <div class="stats">
-        <span class="stat ok">{{ counts().OK }} OK</span>
-        <span class="stat help">{{ counts().HELP }} Hilfe</span>
-        <span class="stat progress">{{ counts().HELP_IN_PROGRESS }} in Arbeit</span>
-        <span class="stat emergency">{{ counts().EMERGENCY }} Notfall</span>
-      </div>
-    </section>
+    <!-- Lage (immer sichtbar) -->
+    <div class="stats">
+      <span class="stat ok">{{ counts().OK }} OK</span>
+      <span class="stat help">{{ counts().HELP }} Hilfe</span>
+      <span class="stat progress">{{ counts().HELP_IN_PROGRESS }} Arbeit</span>
+      <span class="stat emergency">{{ counts().EMERGENCY }} Notfall</span>
+    </div>
 
-    <!-- Spieler-Sicht öffnen -->
-    <section class="panel">
-      <h4>🎮 Spieler-Sicht</h4>
-      <div class="open-client">
-        <select (change)="selectedViewId.set($any($event.target).value)">
-          <option value="">— Person wählen —</option>
-          @for (wid of watcherIdList(); track wid) {
-            <option [value]="wid">{{ wid }}</option>
-          }
-        </select>
-        <button (click)="openPlayerView()">▶ Öffnen</button>
-      </div>
-      <p class="help">Person auswählen → „Öffnen" zeigt ihre Sicht.</p>
-    </section>
+    <!-- Reiter -->
+    <div class="tabs">
+      <button [class.active]="activeTab() === 'steuern'" (click)="activeTab.set('steuern')">Steuern</button>
+      <button [class.active]="activeTab() === 'helfer'" (click)="activeTab.set('helfer')">Helfer</button>
+      <button [class.active]="activeTab() === 'chat'" (click)="activeTab.set('chat')">Chat</button>
+      <button [class.active]="activeTab() === 'sichten'" (click)="activeTab.set('sichten')">Sichten</button>
+      <button [class.active]="activeTab() === 'log'" (click)="activeTab.set('log')">Log</button>
+    </div>
 
-    <!-- Helfer-Sicht öffnen -->
-    <section class="panel">
-      <h4>🦺 Helfer-Sicht</h4>
-      <div class="open-client">
-        <select (change)="selectedChaperoneViewId.set($any($event.target).value)">
-          <option value="">— Helfer wählen —</option>
-          @for (c of chaperones(); track c.id) {
-            <option [value]="c.id">{{ c.id }}</option>
-          }
-        </select>
-        <button (click)="openChaperoneView()">▶ Öffnen</button>
-      </div>
-      <p class="help">Helfer auswählen → „Öffnen" zeigt seine Sicht.</p>
-    </section>
-
-    <!-- Chat mit Helfer -->
-    <section class="panel">
-      <h4>💬 Chat mit Helfer</h4>
-      <div class="open-client">
-        <select (change)="chatPartner.set($any($event.target).value)">
-          <option value="">— Helfer wählen —</option>
-          @for (c of chaperones(); track c.id) {
-            <option [value]="c.id">{{ c.id }}</option>
-          }
-        </select>
-      </div>
-      @if (chatPartner()) {
-        <app-chat-box [me]="'orch-1'" [partner]="chatPartner()" [partnerLabel]="chatPartner()" [messages]="chat()" />
-      } @else {
-        <p class="help">Helfer wählen, um zu chatten.</p>
-      }
-    </section>
-
-    <!-- Person selbst steuern -->
-    @if (controlledId(); as cid) {
-      <section class="panel control">
-        <h4>🎮 Du steuerst: {{ cid }}</h4>
-        <div class="status-btns">
-          <button class="ok" (click)="controlStatus('OK')">✅ OK</button>
-          <button class="help" (click)="controlStatus('HELP')">🙋 Hilfe</button>
-          <button class="emergency" (click)="controlStatus('EMERGENCY')">🆘 Notfall</button>
-        </div>
-        <div class="dpad">
-          <button (click)="nudgeControlled(step, 0)">↑</button>
-          <div class="dpad-mid">
-            <button (click)="nudgeControlled(0, -step)">←</button>
-            <button (click)="nudgeControlled(0, step)">→</button>
+    <!-- TAB: Steuern -->
+    @if (activeTab() === 'steuern') {
+      @if (controlledId(); as cid) {
+        <section class="panel control">
+          <h4>🎮 Du steuerst: {{ cid }}</h4>
+          <div class="status-btns">
+            <button class="ok" (click)="controlStatus('OK')">✅ OK</button>
+            <button class="help" (click)="controlStatus('HELP')">🙋 Hilfe</button>
+            <button class="emergency" (click)="controlStatus('EMERGENCY')">🆘 Notfall</button>
           </div>
-          <button (click)="nudgeControlled(-step, 0)">↓</button>
-        </div>
-        <button class="ghost release" (click)="releaseControl()">Steuerung freigeben</button>
-      </section>
-    } @else {
+          <div class="dpad">
+            <button (click)="nudgeControlled(step, 0)">↑</button>
+            <div class="dpad-mid">
+              <button (click)="nudgeControlled(0, -step)">←</button>
+              <button (click)="nudgeControlled(0, step)">→</button>
+            </div>
+            <button (click)="nudgeControlled(-step, 0)">↓</button>
+          </div>
+          <button class="release" (click)="releaseControl()">Steuerung freigeben</button>
+        </section>
+      }
+
       <section class="panel">
-        <p class="help">🎮 Klick auf eine Person (bei Werkzeug „aus") = übernehmen &amp; selbst bewegen/melden.</p>
+        <h4>1 · Wen steuern?</h4>
+        <div class="seg">
+          <button [class.active]="target() === 'all'" (click)="setTarget('all')">Alle</button>
+          <button [class.active]="target() === 'selection'" (click)="setTarget('selection')">
+            Auswahl ({{ selectedCount() }})
+          </button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h4>2 · Befehl geben</h4>
+        <div class="tools">
+          <button [class.active]="tool() === 'select'" (click)="setTool('select')">⬚ Auswählen</button>
+          <button [class.active]="tool() === 'gather'" (click)="setTool('gather')">📍 Sammelpunkt</button>
+          <button [class.active]="tool() === 'path'" (click)="setTool('path')">✏️ Weg</button>
+          <button [class.active]="tool() === 'zone'" (click)="setTool('zone')">⛔ Sperrzone</button>
+          <button [class.active]="tool() === 'block'" (click)="setTool('block')">🧱 Blocklinie</button>
+        </div>
+        <div class="tools secondary">
+          <button class="ghost" (click)="clearSelection()">Auswahl aufheben</button>
+          <button class="ghost" [class.active]="heatOn()" (click)="toggleHeat()">🔥 Heatmap</button>
+          <button class="ghost danger" (click)="clearAll()">↺ Reset</button>
+        </div>
+        @if (tool() !== 'none') {
+          <p class="hint">
+            @switch (tool()) {
+              @case ('select') { 👉 Rechteck über Personen ziehen. }
+              @case ('gather') { 👉 Auf einen Punkt klicken. }
+              @case ('path') { 👉 Mit gedrückter Maus einen Weg zeichnen. }
+              @case ('zone') { 👉 Rechteck ziehen – Bereich wird gemieden. }
+              @case ('block') { 👉 Mit gedrückter Maus eine Wand zeichnen. }
+              @case ('charea') { 👉 Rechteck ziehen = Einsatzbereich für {{ areaTarget() }}. }
+            }
+          </p>
+        } @else {
+          <p class="help">Tipp: Person anklicken (Werkzeug „aus") = selbst steuern.</p>
+        }
+      </section>
+
+      <section class="panel">
+        <h4>Aktive Befehle ({{ directives().length }})</h4>
+        @if (directives().length === 0) {
+          <p class="help">Keine aktiv.</p>
+        }
+        @for (d of directives(); track d.id) {
+          <div class="row">
+            <span>{{ directiveLabel(d) }}</span>
+            <button class="x" (click)="removeDirective(d.id)">✕</button>
+          </div>
+        }
       </section>
     }
 
-    <!-- Schritt 1: Ziel -->
-    <section class="panel">
-      <h4>1 · Wen steuern?</h4>
-      <div class="seg">
-        <button [class.active]="target() === 'all'" (click)="setTarget('all')">Alle Personen</button>
-        <button [class.active]="target() === 'selection'" (click)="setTarget('selection')">
-          Nur Auswahl ({{ selectedCount() }})
-        </button>
-      </div>
-      <p class="help">Tipp: erst mit „⬚ Auswählen" eine Gruppe markieren, dann „Nur Auswahl".</p>
-    </section>
-
-    <!-- Schritt 2: Werkzeuge -->
-    <section class="panel">
-      <h4>2 · Befehl geben</h4>
-      <div class="tools">
-        <button [class.active]="tool() === 'select'" (click)="setTool('select')"
-          title="Rechteck ziehen, um Personen zu markieren">⬚ Auswählen</button>
-        <button [class.active]="tool() === 'gather'" (click)="setTool('gather')"
-          title="Punkt anklicken – alle gehen dorthin">📍 Sammelpunkt</button>
-        <button [class.active]="tool() === 'path'" (click)="setTool('path')"
-          title="Mit der Maus einen Weg zeichnen">✏️ Weg</button>
-        <button [class.active]="tool() === 'zone'" (click)="setTool('zone')"
-          title="Bereich aufziehen, der gemieden wird">⛔ Sperrzone</button>
-        <button [class.active]="tool() === 'block'" (click)="setTool('block')"
-          title="Wand zeichnen, die niemand überquert">🧱 Blocklinie</button>
-      </div>
-      <div class="tools secondary">
-        <button class="ghost" (click)="clearSelection()">Auswahl aufheben</button>
-        <button class="ghost" [class.active]="heatOn()" (click)="toggleHeat()">🔥 Heatmap</button>
-        <button class="ghost danger" (click)="clearAll()">↺ Alles zurücksetzen</button>
-      </div>
-      @if (tool() !== 'none') {
-        <p class="hint">
-          @switch (tool()) {
-            @case ('select') { 👉 Rechteck über die gewünschten Personen ziehen. }
-            @case ('gather') { 👉 Auf einen Punkt klicken. }
-            @case ('path') { 👉 Mit gedrückter Maus einen Weg zeichnen. }
-            @case ('zone') { 👉 Rechteck ziehen – dieser Bereich wird gemieden. }
-            @case ('block') { 👉 Mit gedrückter Maus eine Wand zeichnen. }
-            @case ('charea') { 👉 Rechteck ziehen = Einsatzbereich für Helfer {{ areaTarget() }}. }
-          }
+    <!-- TAB: Helfer -->
+    @if (activeTab() === 'helfer') {
+      <section class="panel">
+        <h4>🦺 Helfer ({{ chaperones().length }})</h4>
+        <p class="help">
+          Modus: <strong>Auto</strong> = überall, <strong>Bereich</strong> = nur im Gebiet,
+          <strong>Aus</strong> = Pause. „darf durch" = Sperren überwinden
+          (<span class="on-text">grün = ja</span>).
         </p>
-      }
-    </section>
-
-    <!-- Aktive Befehle -->
-    <section class="panel">
-      <h4>Aktive Befehle ({{ directives().length }})</h4>
-      @if (directives().length === 0) {
-        <p class="help">Noch keine Befehle aktiv.</p>
-      }
-      @for (d of directives(); track d.id) {
-        <div class="row">
-          <span>{{ directiveLabel(d) }}</span>
-          <button class="x" title="Diesen Befehl entfernen" (click)="removeDirective(d.id)">✕</button>
+        <div class="bulk">
+          <span>Alle dürfen durch:</span>
+          <button class="pill" [class.on]="allPass('blockers')"
+            (click)="setAllChaperones('blockers', !allPass('blockers'))">🧱 Wände</button>
+          <button class="pill" [class.on]="allPass('zones')"
+            (click)="setAllChaperones('zones', !allPass('zones'))">⛔ Zonen</button>
         </div>
-      }
-    </section>
-
-    <!-- Helfer-Einsatzmodul -->
-    <section class="panel">
-      <h4>🦺 Helfer-Einsatz ({{ chaperones().length }})</h4>
-      <p class="help">
-        Modus je Helfer: <strong>Auto</strong> = überall, <strong>Bereich</strong> = nur im gezeichneten
-        Gebiet, <strong>Aus</strong> = Pause. „darf durch" = Sperren überwinden
-        (<span class="on-text">grün = ja</span>).
-      </p>
-
-      <div class="bulk">
-        <span>Alle dürfen durch:</span>
-        <button class="pill" [class.on]="allPass('blockers')"
-          (click)="setAllChaperones('blockers', !allPass('blockers'))">🧱 Wände</button>
-        <button class="pill" [class.on]="allPass('zones')"
-          (click)="setAllChaperones('zones', !allPass('zones'))">⛔ Zonen</button>
-      </div>
-
-      @for (c of chaperones(); track c.id) {
-        <div class="chap-card">
-          <div class="chap-head">
-            <span class="chap-id">🦺 {{ c.id }} <small>· {{ c.rescues }} Einsätze</small></span>
-            @if (c.mode === 'OFF') {
-              <span class="badge idle">Pause</span>
-            } @else if (c.targetWatcherId) {
-              <span class="badge busy">→ {{ c.targetWatcherId }}</span>
-            } @else {
-              <span class="badge idle">bereit</span>
-            }
-          </div>
-
-          <div class="chap-row">
-            <span class="perm-label">Modus:</span>
-            <div class="seg small">
-              <button [class.active]="c.mode === 'AUTO'" (click)="setMode(c, 'AUTO')">Auto</button>
-              <button [class.active]="c.mode === 'AREA'" (click)="setMode(c, 'AREA')">Bereich</button>
-              <button [class.active]="c.mode === 'OFF'" (click)="setMode(c, 'OFF')">Aus</button>
+        @for (c of chaperones(); track c.id) {
+          <div class="chap-card">
+            <div class="chap-head">
+              <span class="chap-id">🦺 {{ c.id }} <small>· {{ c.rescues }} Einsätze</small></span>
+              @if (c.mode === 'OFF') {
+                <span class="badge idle">Pause</span>
+              } @else if (c.targetWatcherId) {
+                <span class="badge busy">→ {{ c.targetWatcherId }}</span>
+              } @else {
+                <span class="badge idle">bereit</span>
+              }
             </div>
-          </div>
-
-          @if (c.mode === 'AREA') {
             <div class="chap-row">
-              <button class="area-btn" [class.active]="areaTarget() === c.id" (click)="startAreaAssign(c)">
-                ✏️ Bereich zeichnen{{ c.area.length >= 3 ? ' (gesetzt)' : '' }}
-              </button>
+              <span class="perm-label">Modus:</span>
+              <div class="seg small">
+                <button [class.active]="c.mode === 'AUTO'" (click)="setMode(c, 'AUTO')">Auto</button>
+                <button [class.active]="c.mode === 'AREA'" (click)="setMode(c, 'AREA')">Bereich</button>
+                <button [class.active]="c.mode === 'OFF'" (click)="setMode(c, 'OFF')">Aus</button>
+              </div>
             </div>
-          }
-
-          <div class="chap-perms">
-            <span class="perm-label">darf durch:</span>
-            <button class="pill" [class.on]="c.ignoreBlockers"
-              (click)="toggleChaperone(c, 'blockers', !c.ignoreBlockers)">🧱 Wände</button>
-            <button class="pill" [class.on]="c.ignoreZones"
-              (click)="toggleChaperone(c, 'zones', !c.ignoreZones)">⛔ Zonen</button>
+            @if (c.mode === 'AREA') {
+              <div class="chap-row">
+                <button class="area-btn" [class.active]="areaTarget() === c.id" (click)="startAreaAssign(c)">
+                  ✏️ Bereich zeichnen{{ c.area.length >= 3 ? ' (gesetzt)' : '' }}
+                </button>
+              </div>
+            }
+            <div class="chap-perms">
+              <span class="perm-label">darf durch:</span>
+              <button class="pill" [class.on]="c.ignoreBlockers"
+                (click)="toggleChaperone(c, 'blockers', !c.ignoreBlockers)">🧱 Wände</button>
+              <button class="pill" [class.on]="c.ignoreZones"
+                (click)="toggleChaperone(c, 'zones', !c.ignoreZones)">⛔ Zonen</button>
+            </div>
           </div>
-        </div>
-      }
-    </section>
+        }
+      </section>
+    }
 
-    <!-- Einsatz-Log -->
-    <section class="panel">
-      <h4>📋 Einsatz-Log</h4>
-      @if (log().length === 0) {
-        <p class="help">Noch keine Einsätze.</p>
-      }
-      @for (e of log(); track $index) {
-        <div class="log-row">
-          <span class="log-time">{{ formatTime(e.timestamp) }}</span>
-          <span>🦺 {{ e.chaperoneId }} → versorgte {{ e.watcherId }}</span>
+    <!-- TAB: Chat -->
+    @if (activeTab() === 'chat') {
+      <section class="panel">
+        <h4>💬 Chat mit Helfer</h4>
+        <select class="chat-select" (change)="chatPartner.set($any($event.target).value)">
+          <option value="">— Helfer wählen —</option>
+          @for (c of chaperones(); track c.id) {
+            <option [value]="c.id">{{ c.id }}</option>
+          }
+        </select>
+        @if (chatPartner()) {
+          <app-chat-box [me]="'orch-1'" [partner]="chatPartner()" [partnerLabel]="chatPartner()" [messages]="chat()" />
+        } @else {
+          <p class="help">Helfer wählen, um zu chatten.</p>
+        }
+      </section>
+    }
+
+    <!-- TAB: Sichten -->
+    @if (activeTab() === 'sichten') {
+      <section class="panel">
+        <h4>🎮 Spieler-Sicht</h4>
+        <div class="open-client">
+          <select (change)="selectedViewId.set($any($event.target).value)">
+            <option value="">— Person wählen —</option>
+            @for (wid of watcherIdList(); track wid) {
+              <option [value]="wid">{{ wid }}</option>
+            }
+          </select>
+          <button (click)="openPlayerView()">▶</button>
         </div>
-      }
-    </section>
+      </section>
+      <section class="panel">
+        <h4>🦺 Helfer-Sicht</h4>
+        <div class="open-client">
+          <select (change)="selectedChaperoneViewId.set($any($event.target).value)">
+            <option value="">— Helfer wählen —</option>
+            @for (c of chaperones(); track c.id) {
+              <option [value]="c.id">{{ c.id }}</option>
+            }
+          </select>
+          <button (click)="openChaperoneView()">▶</button>
+        </div>
+      </section>
+    }
+
+    <!-- TAB: Log -->
+    @if (activeTab() === 'log') {
+      <section class="panel">
+        <h4>📋 Einsatz-Log</h4>
+        @if (log().length === 0) {
+          <p class="help">Noch keine Einsätze.</p>
+        }
+        @for (e of log(); track $index) {
+          <div class="log-row">
+            <span class="log-time">{{ formatTime(e.timestamp) }}</span>
+            <span>🦺 {{ e.chaperoneId }} → {{ e.watcherId }}</span>
+          </div>
+        }
+      </section>
+    }
   </div>
 
   <div #mapContainer class="map" [class.drawing]="tool() !== 'none'"></div>

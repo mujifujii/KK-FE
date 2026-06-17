@@ -119,6 +119,31 @@
 .stat.progress { background: #3498db; color: #fff; }
 .stat.emergency { background: #e74c3c; color: #fff; }
 
+/* Reiter */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 10px 0 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.tabs button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: #cfcfcf;
+  padding: 8px 4px;
+  font-size: 12px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.tabs button.active {
+  color: #fff;
+  border-bottom-color: #2d8cf0;
+  font-weight: 600;
+}
+
 /* Ziel-Umschalter */
 .seg {
   display: flex;
@@ -390,6 +415,21 @@
 
 .open-client button:hover {
   filter: brightness(1.1);
+}
+
+.chat-select {
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  padding: 7px 9px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.chat-select option {
+  color: #000;
 }
 
 /* Person selbst steuern */
