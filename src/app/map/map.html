@@ -16,6 +16,54 @@
       </div>
     </section>
 
+    <!-- Spieler-Sicht öffnen -->
+    <section class="panel">
+      <h4>🎮 Spieler-Sicht</h4>
+      <div class="open-client">
+        <select (change)="selectedViewId.set($any($event.target).value)">
+          <option value="">— Person wählen —</option>
+          @for (wid of watcherIdList(); track wid) {
+            <option [value]="wid">{{ wid }}</option>
+          }
+        </select>
+        <button (click)="openPlayerView()">▶ Öffnen</button>
+      </div>
+      <p class="help">Person auswählen → „Öffnen" zeigt ihre Sicht.</p>
+    </section>
+
+    <!-- Helfer-Sicht öffnen -->
+    <section class="panel">
+      <h4>🦺 Helfer-Sicht</h4>
+      <div class="open-client">
+        <select (change)="selectedChaperoneViewId.set($any($event.target).value)">
+          <option value="">— Helfer wählen —</option>
+          @for (c of chaperones(); track c.id) {
+            <option [value]="c.id">{{ c.id }}</option>
+          }
+        </select>
+        <button (click)="openChaperoneView()">▶ Öffnen</button>
+      </div>
+      <p class="help">Helfer auswählen → „Öffnen" zeigt seine Sicht.</p>
+    </section>
+
+    <!-- Chat mit Helfer -->
+    <section class="panel">
+      <h4>💬 Chat mit Helfer</h4>
+      <div class="open-client">
+        <select (change)="chatPartner.set($any($event.target).value)">
+          <option value="">— Helfer wählen —</option>
+          @for (c of chaperones(); track c.id) {
+            <option [value]="c.id">{{ c.id }}</option>
+          }
+        </select>
+      </div>
+      @if (chatPartner()) {
+        <app-chat-box [me]="'orch-1'" [partner]="chatPartner()" [partnerLabel]="chatPartner()" [messages]="chat()" />
+      } @else {
+        <p class="help">Helfer wählen, um zu chatten.</p>
+      }
+    </section>
+
     <!-- Person selbst steuern -->
     @if (controlledId(); as cid) {
       <section class="panel control">

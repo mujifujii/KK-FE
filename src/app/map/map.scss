@@ -330,6 +330,40 @@
   min-width: 64px;
 }
 
+/* Spieler-Sicht öffnen */
+.open-client {
+  display: flex;
+  gap: 6px;
+}
+
+.open-client select {
+  flex: 1;
+  border: 0;
+  border-radius: 6px;
+  padding: 7px 9px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.open-client option {
+  color: #000;
+}
+
+.open-client button {
+  border: 0;
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  background: #2d8cf0;
+  color: #fff;
+}
+
+.open-client button:hover {
+  filter: brightness(1.1);
+}
+
 /* Person selbst steuern */
 .panel.control {
   background: rgba(241, 196, 15, 0.12);

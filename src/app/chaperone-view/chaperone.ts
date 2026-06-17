@@ -11,7 +11,7 @@ import { ActivatedRoute } from '@angular/router';
 import { WatcherApi } from '../watcher.api';
 import { WS_URL } from '../api-config';
 import { ChatBox } from '../chat/chat-box';
-import { Chaperone, ChatMessage, Directive, Watcher, WatcherStatus } from '../watcher.model';
+import { Chaperone, ChaperoneMode, ChatMessage, Directive, Watcher, WatcherStatus } from '../watcher.model';
 
 declare const L: any;
 
@@ -22,23 +22,14 @@ const STATUS_COLORS: Record<WatcherStatus, string> = {
   EMERGENCY: '#e74c3c',
 };
 
-const STATUS_TEXT: Record<WatcherStatus, string> = {
-  OK: 'Alles ok',
-  HELP: 'Hilfe angefordert',
-  HELP_IN_PROGRESS: 'Hilfe ist unterwegs',
-  EMERGENCY: 'Notfall gemeldet',
-};
-
-const STEP = 0.0009; // Schrittweite der Pfeil-Steuerung
-
 @Component({
-  selector: 'app-client',
+  selector: 'app-chaperone-view',
   standalone: true,
   imports: [ChatBox],
-  templateUrl: './client.html',
-  styleUrl: './client.scss',
+  templateUrl: './chaperone.html',
+  styleUrl: './chaperone.scss',
 })
-export class ClientView implements OnInit, OnDestroy {
+export class ChaperoneView implements OnInit, OnDestroy {
   @ViewChild('miniMap', { static: true })
   private mapEl!: ElementRef<HTMLDivElement>;
 
@@ -48,14 +39,17 @@ export class ClientView implements OnInit, OnDestroy {
   id = '';
   readonly connected = signal(false);
   readonly found = signal(true);
-  readonly status = signal<WatcherStatus>('OK');
-  readonly instruction = signal('Verbinde …');
+  readonly mode = signal<ChaperoneMode>('AUTO');
+  readonly targetWatcher = signal<string | null>(null);
+  readonly rescues = signal(0);
   readonly chat = signal<ChatMessage[]>([]);
-  readonly chaperoneIds = signal<string[]>([]);
-  readonly chatPartner = signal<string>('');
+  readonly watcherIds = signal<string[]>([]);
+  readonly chatWatcher = signal<string>('');
 
   private map: any;
   private vizLayer: any;
+  private areaLayer: any;
+  private meRing: any;
   private readonly markers = new Map<string, any>();
   private readonly chaperoneMarkers = new Map<string, any>();
   private myLoc?: { latitude: number; longitude: number };
@@ -74,11 +68,9 @@ export class ClientView implements OnInit, OnDestroy {
       maxZoom: 19,
     }).addTo(this.map);
     this.vizLayer = L.layerGroup().addTo(this.map);
+    this.areaLayer = L.layerGroup().addTo(this.map);
     setTimeout(() => this.map.invalidateSize(), 0);
 
-    this.map.on('click', (e: any) => this.moveTo(e.latlng.lat, e.latlng.lng));
-
-    this.api.setWatcherControl(this.id, true).subscribe();
     this.connectSocket();
   }
 
@@ -104,41 +96,37 @@ export class ClientView implements OnInit, OnDestroy {
   }
 
   private render(watchers: Watcher[], chaperones: Chaperone[], directives: Directive[]): void {
-    const me = watchers.find((w) => w.id === this.id);
+    const me = chaperones.find((c) => c.id === this.id);
     if (!me) {
       this.found.set(false);
       return;
     }
     this.found.set(true);
     this.myLoc = me.location;
-    this.status.set(me.status);
-    if (this.chaperoneIds().length !== chaperones.length) {
-      this.chaperoneIds.set(chaperones.map((c) => c.id).sort());
+    this.mode.set(me.mode);
+    this.targetWatcher.set(me.targetWatcherId);
+    this.rescues.set(me.rescues);
+    if (this.watcherIds().length !== watchers.length) {
+      this.watcherIds.set(
+        watchers.map((w) => w.id).sort((a, b) => this.idNum(a) - this.idNum(b)),
+      );
     }
 
-    // ALLE Personen zeichnen – ich selbst hervorgehoben (goldener Ring, größer).
+    // Personen (kleine Punkte)
     for (const w of watchers) {
-      const isMe = w.id === this.id;
       const color = STATUS_COLORS[w.status] ?? '#888888';
       const latlng: [number, number] = [w.location.latitude, w.location.longitude];
       let marker = this.markers.get(w.id);
       if (marker) {
         marker.setLatLng(latlng);
-        marker.setRadius(isMe ? 11 : 5);
-        marker.setStyle({ color: isMe ? '#f1c40f' : color, fillColor: color, weight: isMe ? 4 : 1, fillOpacity: isMe ? 1 : 0.55 });
+        marker.setStyle({ fillColor: color, color });
       } else {
-        marker = L.circleMarker(latlng, {
-          radius: isMe ? 11 : 5,
-          color: isMe ? '#f1c40f' : color,
-          fillColor: color,
-          fillOpacity: isMe ? 1 : 0.55,
-          weight: isMe ? 4 : 1,
-        }).addTo(this.map);
+        marker = L.circleMarker(latlng, { radius: 5, color, fillColor: color, fillOpacity: 0.55, weight: 1 }).addTo(this.map);
         this.markers.set(w.id, marker);
       }
     }
 
-    // Helfer einblenden
+    // Helfer (🦺)
     for (const c of chaperones) {
       const latlng: [number, number] = [c.location.latitude, c.location.longitude];
       let marker = this.chaperoneMarkers.get(c.id);
@@ -152,17 +140,29 @@ export class ClientView implements OnInit, OnDestroy {
       }
     }
 
-    // Karte einmal auf mich zentrieren (danach frei beweglich).
-    if (!this.centeredOnce) {
-      this.map.setView([me.location.latitude, me.location.longitude], 15, { animate: false });
-      this.centeredOnce = true;
+    // Goldener Ring um MICH
+    const meLatLng: [number, number] = [me.location.latitude, me.location.longitude];
+    if (this.meRing) {
+      this.meRing.setLatLng(meLatLng);
+    } else {
+      this.meRing = L.circleMarker(meLatLng, { radius: 15, color: '#f1c40f', fillOpacity: 0, weight: 4 }).addTo(this.map);
     }
 
-    const applicable = directives.filter(
-      (d) => d.watcherIds.length === 0 || d.watcherIds.includes(this.id),
-    );
-    this.drawDirectives(applicable);
-    this.instruction.set(this.computeInstruction(applicable, me.status));
+    // Mein Einsatzbereich
+    this.areaLayer.clearLayers();
+    if (me.mode === 'AREA' && me.area.length >= 3) {
+      L.polygon(me.area.map((p) => [p.latitude, p.longitude]), {
+        color: '#8e44ad', fillColor: '#8e44ad', fillOpacity: 0.08, weight: 2, dashArray: '4,6',
+      }).addTo(this.areaLayer);
+    }
+
+    // Befehle der Leitstelle (Kontext)
+    this.drawDirectives(directives);
+
+    if (!this.centeredOnce) {
+      this.map.setView(meLatLng, 15, { animate: false });
+      this.centeredOnce = true;
+    }
   }
 
   private drawDirectives(directives: Directive[]): void {
@@ -181,65 +181,32 @@ export class ClientView implements OnInit, OnDestroy {
     }
   }
 
-  private computeInstruction(directives: Directive[], status: WatcherStatus): string {
-    if (status === 'EMERGENCY') {
-      return '🛑 Bleib wo du bist – Hilfe kommt zu dir.';
-    }
-    if (directives.some((d) => d.type === 'GATHER')) {
-      return '➡️ Begib dich zum markierten Sammelpunkt.';
-    }
-    if (directives.some((d) => d.type === 'FOLLOW_PATH')) {
-      return '➡️ Folge dem markierten Weg.';
-    }
-    if (directives.some((d) => d.type === 'AVOID')) {
-      return '⚠️ Meide den markierten Bereich.';
-    }
-    if (directives.some((d) => d.type === 'BLOCK')) {
-      return '🧱 Achtung: gesperrte Linie in der Nähe.';
-    }
-    return '✅ Keine Anweisung – du kannst dich frei bewegen.';
+  // --- Steuerung ---
+
+  modeText(): string {
+    return { AUTO: 'Automatisch (überall)', AREA: 'Nur im Bereich', OFF: 'Pause' }[this.mode()];
   }
 
-  // --- Steuerung (Testversion) ---
-
-  statusColor(): string {
-    return STATUS_COLORS[this.status()];
+  setMode(mode: ChaperoneMode): void {
+    this.api.setChaperoneMode(this.id, mode).subscribe();
   }
 
-  statusText(): string {
-    return STATUS_TEXT[this.status()];
+  private idNum(id: string): number {
+    const n = parseInt(id.replace(/\D/g, ''), 10);
+    return Number.isNaN(n) ? 0 : n;
   }
 
-  setStatus(status: WatcherStatus): void {
-    this.api.updateWatcherStatus(this.id, status).subscribe();
-  }
-
-  nudge(dLat: number, dLng: number): void {
-    if (!this.myLoc) {
-      return;
-    }
-    this.api.updateWatcherLocation(this.id, this.myLoc.latitude + dLat, this.myLoc.longitude + dLng).subscribe();
-  }
-
-  /** Zentriert die Karte wieder auf mich. */
   recenter(): void {
     if (this.myLoc) {
       this.map.setView([this.myLoc.latitude, this.myLoc.longitude], this.map.getZoom(), { animate: true });
     }
   }
 
-  private moveTo(lat: number, lng: number): void {
-    this.api.updateWatcherLocation(this.id, lat, lng).subscribe();
-  }
-
-  readonly step = STEP;
-
   ngOnDestroy(): void {
     this.destroyed = true;
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
     }
-    this.api.setWatcherControl(this.id, false).subscribe();
     this.socket?.close();
     this.map?.remove();
   }

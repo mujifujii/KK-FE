@@ -1,0 +1,21 @@
+<div class="chatbox">
+  <div class="messages">
+    @for (m of conversation(); track m.id) {
+      <div class="msg" [class.mine]="mine(m)">
+        <span class="bubble">{{ m.text }}</span>
+        <span class="ts">{{ formatTime(m.timestamp) }}</span>
+      </div>
+    } @empty {
+      <div class="empty">Noch keine Nachrichten.</div>
+    }
+  </div>
+  <div class="compose">
+    <input
+      [value]="draft()"
+      (input)="draft.set($any($event.target).value)"
+      (keyup.enter)="send()"
+      [placeholder]="'Nachricht an ' + (partnerLabel() || partner())"
+    />
+    <button (click)="send()">➤</button>
+  </div>
+</div>

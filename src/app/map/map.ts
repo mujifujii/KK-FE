@@ -7,10 +7,14 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { Router } from '@angular/router';
 import { WatcherApi } from '../watcher.api';
+import { WS_URL } from '../api-config';
+import { ChatBox } from '../chat/chat-box';
 import {
   Chaperone,
   ChaperoneMode,
+  ChatMessage,
   Directive,
   DirectiveType,
   HelpEvent,
@@ -34,6 +38,7 @@ const STATUS_COLORS: Record<WatcherStatus, string> = {
 @Component({
   selector: 'app-map',
   standalone: true,
+  imports: [ChatBox],
   templateUrl: './map.html',
   styleUrl: './map.scss',
 })
@@ -42,6 +47,7 @@ export class MapComponent implements OnInit, OnDestroy {
   private mapContainer!: ElementRef<HTMLDivElement>;
 
   private readonly api = inject(WatcherApi);
+  private readonly router = inject(Router);
   private map: any;
   private readonly markers = new Map<string, any>();
   private readonly chaperoneMarkers = new Map<string, any>();
@@ -66,6 +72,11 @@ export class MapComponent implements OnInit, OnDestroy {
   readonly areaTarget = signal<string | null>(null); // welcher Helfer bekommt gerade einen Bereich
   readonly controlledId = signal<string | null>(null);     // welche Person gerade selbst gesteuert wird
   readonly controlledStatus = signal<WatcherStatus | null>(null);
+  readonly watcherIdList = signal<string[]>([]);           // für das Spieler-Sicht-Dropdown
+  readonly selectedViewId = signal<string>('');
+  readonly selectedChaperoneViewId = signal<string>('');
+  readonly chat = signal<ChatMessage[]>([]);
+  readonly chatPartner = signal<string>('');
 
   // Auswahl & Zeichnen
   private selectedIds = new Set<string>();
@@ -96,7 +107,7 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   private connectSocket(): void {
-    this.socket = new WebSocket('ws://localhost:8080/ws/state');
+    this.socket = new WebSocket(WS_URL);
     this.socket.onopen = () => this.connected.set(true);
     this.socket.onmessage = (event) => {
       const state = JSON.parse(event.data) as {
@@ -104,11 +115,13 @@ export class MapComponent implements OnInit, OnDestroy {
         chaperones: Chaperone[];
         directives: Directive[];
         log: HelpEvent[];
+        chat: ChatMessage[];
       };
       this.renderWatchers(state.watchers ?? []);
       this.renderChaperones(state.chaperones ?? []);
       this.renderDirectives(state.directives ?? []);
       this.log.set(state.log ?? []);
+      this.chat.set(state.chat ?? []);
     };
     this.socket.onclose = () => {
       this.connected.set(false);
@@ -159,6 +172,27 @@ export class MapComponent implements OnInit, OnDestroy {
 
   removeDirective(id: string): void {
     this.api.removeDirective(id).subscribe();
+  }
+
+  /** Wechselt zur Spieler-Sicht der im Dropdown gewählten Person. */
+  openPlayerView(): void {
+    const id = this.selectedViewId();
+    if (id) {
+      this.router.navigate(['/client', id]);
+    }
+  }
+
+  /** Wechselt zur Helfer-Sicht des im Dropdown gewählten Chaperones. */
+  openChaperoneView(): void {
+    const id = this.selectedChaperoneViewId();
+    if (id) {
+      this.router.navigate(['/chaperone', id]);
+    }
+  }
+
+  private idNum(id: string): number {
+    const n = parseInt(id.replace(/\D/g, ''), 10);
+    return Number.isNaN(n) ? 0 : n;
   }
 
   // --- Eine Person selbst steuern (innerhalb der Leitstellen-Ansicht) ---
@@ -376,6 +410,12 @@ export class MapComponent implements OnInit, OnDestroy {
     }
 
     this.counts.set(counts);
+
+    // Dropdown-Liste nur bei Änderung der Anzahl neu setzen (kein Flackern pro Frame).
+    if (this.watcherIdList().length !== watchers.length) {
+      this.watcherIdList.set(watchers.map((w) => w.id).sort((a, b) => this.idNum(a) - this.idNum(b)));
+    }
+
     if (this.heatOn()) {
       this.updateHeat();
     }

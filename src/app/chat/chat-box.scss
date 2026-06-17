@@ -1,0 +1,87 @@
+.chatbox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.empty {
+  font-size: 12px;
+  opacity: 0.5;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.msg {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 85%;
+}
+
+.msg.mine {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.bubble {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 5px 9px;
+  border-radius: 10px;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.msg.mine .bubble {
+  background: #2d8cf0;
+  color: #fff;
+}
+
+.ts {
+  font-size: 10px;
+  opacity: 0.5;
+  margin-top: 1px;
+}
+
+.compose {
+  display: flex;
+  gap: 6px;
+}
+
+.compose input {
+  flex: 1;
+  border: 0;
+  border-radius: 6px;
+  padding: 7px 9px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.compose input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.compose button {
+  border: 0;
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  background: #2d8cf0;
+  color: #fff;
+}
+
+.compose button:hover {
+  filter: brightness(1.1);
+}
