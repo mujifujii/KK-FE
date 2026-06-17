@@ -1,6 +1,7 @@
 import {
   Component,
   ElementRef,
+  NgZone,
   OnDestroy,
   OnInit,
   ViewChild,
@@ -11,6 +12,7 @@ import { ActivatedRoute } from '@angular/router';
 import { WatcherApi } from '../watcher.api';
 import { WS_URL } from '../api-config';
 import { ChatBox } from '../chat/chat-box';
+import { setMarkerTarget, tweenMarker } from '../marker-anim';
 import { Chaperone, ChatMessage, Directive, Watcher, WatcherStatus } from '../watcher.model';
 
 declare const L: any;
@@ -44,6 +46,7 @@ export class ClientView implements OnInit, OnDestroy {
 
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(WatcherApi);
+  private readonly zone = inject(NgZone);
 
   id = '';
   readonly connected = signal(false);
@@ -60,6 +63,9 @@ export class ClientView implements OnInit, OnDestroy {
   private readonly chaperoneMarkers = new Map<string, any>();
   private myLoc?: { latitude: number; longitude: number };
   private centeredOnce = false;
+  private animId = 0;
+  private dirSig = '';
+  private chatSig = '';
 
   private socket?: WebSocket;
   private reconnectTimer?: ReturnType<typeof setTimeout>;
@@ -68,7 +74,7 @@ export class ClientView implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.id = this.route.snapshot.paramMap.get('id') ?? '';
 
-    this.map = L.map(this.mapEl.nativeElement).setView([53.5511, 9.9937], 14);
+    this.map = L.map(this.mapEl.nativeElement, { preferCanvas: true }).setView([53.5511, 9.9937], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap-Mitwirkende',
       maxZoom: 19,
@@ -80,6 +86,19 @@ export class ClientView implements OnInit, OnDestroy {
 
     this.api.setWatcherControl(this.id, true).subscribe();
     this.connectSocket();
+    this.startMarkerAnimation();
+  }
+
+  /** Bewegt die Marker per rAF flüssig zur letzten bekannten Position (~60 fps). */
+  private startMarkerAnimation(): void {
+    this.zone.runOutsideAngular(() => {
+      const loop = (now: number) => {
+        this.markers.forEach((m) => tweenMarker(m, now));
+        this.chaperoneMarkers.forEach((m) => tweenMarker(m, now));
+        this.animId = requestAnimationFrame(loop);
+      };
+      this.animId = requestAnimationFrame(loop);
+    });
   }
 
   private connectSocket(): void {
@@ -92,7 +111,7 @@ export class ClientView implements OnInit, OnDestroy {
         directives: Directive[];
         chat: ChatMessage[];
       };
-      this.chat.set(state.chat ?? []);
+      this.updateChat(state.chat ?? []);
       this.render(state.watchers ?? [], state.chaperones ?? [], state.directives ?? []);
     };
     this.socket.onclose = () => {
@@ -120,34 +139,39 @@ export class ClientView implements OnInit, OnDestroy {
     for (const w of watchers) {
       const isMe = w.id === this.id;
       const color = STATUS_COLORS[w.status] ?? '#888888';
-      const latlng: [number, number] = [w.location.latitude, w.location.longitude];
+      const sig = `${w.status}|${isMe}`;
       let marker = this.markers.get(w.id);
       if (marker) {
-        marker.setLatLng(latlng);
-        marker.setRadius(isMe ? 11 : 5);
-        marker.setStyle({ color: isMe ? '#f1c40f' : color, fillColor: color, weight: isMe ? 4 : 1, fillOpacity: isMe ? 1 : 0.55 });
+        setMarkerTarget(marker, w.location.latitude, w.location.longitude);
+        if (marker.__sig !== sig) {
+          marker.__sig = sig;
+          marker.setRadius(isMe ? 11 : 5);
+          marker.setStyle({ color: isMe ? '#f1c40f' : color, fillColor: color, weight: isMe ? 4 : 1, fillOpacity: isMe ? 1 : 0.55 });
+        }
       } else {
-        marker = L.circleMarker(latlng, {
+        marker = L.circleMarker([w.location.latitude, w.location.longitude], {
           radius: isMe ? 11 : 5,
           color: isMe ? '#f1c40f' : color,
           fillColor: color,
           fillOpacity: isMe ? 1 : 0.55,
           weight: isMe ? 4 : 1,
         }).addTo(this.map);
+        marker.__sig = sig;
+        setMarkerTarget(marker, w.location.latitude, w.location.longitude);
         this.markers.set(w.id, marker);
       }
     }
 
     // Helfer einblenden
     for (const c of chaperones) {
-      const latlng: [number, number] = [c.location.latitude, c.location.longitude];
       let marker = this.chaperoneMarkers.get(c.id);
       if (marker) {
-        marker.setLatLng(latlng);
+        setMarkerTarget(marker, c.location.latitude, c.location.longitude);
       } else {
-        marker = L.marker(latlng, {
+        marker = L.marker([c.location.latitude, c.location.longitude], {
           icon: L.divIcon({ html: '🦺', className: 'chaperone-icon', iconSize: [20, 20], iconAnchor: [10, 10] }),
         }).addTo(this.map);
+        setMarkerTarget(marker, c.location.latitude, c.location.longitude);
         this.chaperoneMarkers.set(c.id, marker);
       }
     }
@@ -166,6 +190,11 @@ export class ClientView implements OnInit, OnDestroy {
   }
 
   private drawDirectives(directives: Directive[]): void {
+    const sig = JSON.stringify(directives.map((d) => [d.id, d.type, d.points]));
+    if (sig === this.dirSig) {
+      return;
+    }
+    this.dirSig = sig;
     this.vizLayer.clearLayers();
     for (const d of directives) {
       const latlngs = d.points.map((p) => [p.latitude, p.longitude]);
@@ -178,6 +207,15 @@ export class ClientView implements OnInit, OnDestroy {
       } else if (d.type === 'BLOCK') {
         L.polyline(latlngs, { color: '#2c3e50', weight: 7, opacity: 0.9 }).addTo(this.vizLayer);
       }
+    }
+  }
+
+  /** Chat-Signal nur bei echter Änderung setzen (sonst Re-Render pro Frame). */
+  private updateChat(chat: ChatMessage[]): void {
+    const sig = chat.length + ':' + (chat[chat.length - 1]?.id ?? '');
+    if (sig !== this.chatSig) {
+      this.chatSig = sig;
+      this.chat.set(chat);
     }
   }
 
@@ -236,6 +274,7 @@ export class ClientView implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.destroyed = true;
+    cancelAnimationFrame(this.animId);
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
     }

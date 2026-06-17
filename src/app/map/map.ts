@@ -1,6 +1,7 @@
 import {
   Component,
   ElementRef,
+  NgZone,
   OnDestroy,
   OnInit,
   ViewChild,
@@ -10,6 +11,7 @@ import {
 import { Router } from '@angular/router';
 import { WatcherApi } from '../watcher.api';
 import { WS_URL } from '../api-config';
+import { setMarkerTarget, tweenMarker } from '../marker-anim';
 import { ChatBox } from '../chat/chat-box';
 import {
   Chaperone,
@@ -48,10 +50,19 @@ export class MapComponent implements OnInit, OnDestroy {
 
   private readonly api = inject(WatcherApi);
   private readonly router = inject(Router);
+  private readonly zone = inject(NgZone);
   private map: any;
   private readonly markers = new Map<string, any>();
   private readonly chaperoneMarkers = new Map<string, any>();
   private latestWatchers: Watcher[] = [];
+
+  // Animation + Änderungs-Caches (gegen unnötiges Neu-Rendern pro Frame)
+  private animId = 0;
+  private dirSig = '';
+  private areaSig = '';
+  private chapSig = '';
+  private logSig = '';
+  private chatSig = '';
 
   // WebSocket
   private socket?: WebSocket;
@@ -90,7 +101,7 @@ export class MapComponent implements OnInit, OnDestroy {
   private heatLayer: any;
 
   ngOnInit(): void {
-    this.map = L.map(this.mapContainer.nativeElement).setView([53.5511, 9.9937], 12);
+    this.map = L.map(this.mapContainer.nativeElement, { preferCanvas: true }).setView([53.5511, 9.9937], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap-Mitwirkende',
       maxZoom: 19,
@@ -106,6 +117,20 @@ export class MapComponent implements OnInit, OnDestroy {
     this.map.on('click', (e: any) => this.onClick(e));
 
     this.connectSocket();
+    this.startMarkerAnimation();
+  }
+
+  /** Bewegt die Marker per rAF flüssig zur letzten bekannten Position (~60 fps). */
+  private startMarkerAnimation(): void {
+    // Außerhalb der Angular-Zone -> löst KEINE Change-Detection pro Frame aus.
+    this.zone.runOutsideAngular(() => {
+      const loop = (now: number) => {
+        this.markers.forEach((m) => tweenMarker(m, now));
+        this.chaperoneMarkers.forEach((m) => tweenMarker(m, now));
+        this.animId = requestAnimationFrame(loop);
+      };
+      this.animId = requestAnimationFrame(loop);
+    });
   }
 
   private connectSocket(): void {
@@ -122,8 +147,8 @@ export class MapComponent implements OnInit, OnDestroy {
       this.renderWatchers(state.watchers ?? []);
       this.renderChaperones(state.chaperones ?? []);
       this.renderDirectives(state.directives ?? []);
-      this.log.set(state.log ?? []);
-      this.chat.set(state.chat ?? []);
+      this.updateLog(state.log ?? []);
+      this.updateChat(state.chat ?? []);
     };
     this.socket.onclose = () => {
       this.connected.set(false);
@@ -390,15 +415,19 @@ export class MapComponent implements OnInit, OnDestroy {
       const ring = isControlled ? '#f1c40f' : selected ? '#ffffff' : color;
       const radius = isControlled ? 10 : selected ? 9 : 6;
       const weight = isControlled ? 4 : selected ? 3 : 1;
-      const latlng: [number, number] = [w.location.latitude, w.location.longitude];
+      const sig = `${w.status}|${isControlled}|${selected}`;
       let marker = this.markers.get(w.id);
 
       if (marker) {
-        marker.setLatLng(latlng);
-        marker.setRadius(radius);
-        marker.setStyle({ color: ring, fillColor: color, weight });
+        setMarkerTarget(marker, w.location.latitude, w.location.longitude);
+        if (marker.__sig !== sig) {
+          marker.__sig = sig;
+          marker.setRadius(radius);
+          marker.setStyle({ color: ring, fillColor: color, weight });
+          marker.setPopupContent(`<b>${w.id}</b><br>Status: ${w.status}`);
+        }
       } else {
-        marker = L.circleMarker(latlng, {
+        marker = L.circleMarker([w.location.latitude, w.location.longitude], {
           radius,
           color: ring,
           fillColor: color,
@@ -406,12 +435,18 @@ export class MapComponent implements OnInit, OnDestroy {
           weight,
         }).addTo(this.map);
         marker.on('click', () => this.onWatcherClick(w.id));
+        marker.bindPopup(`<b>${w.id}</b><br>Status: ${w.status}`);
+        marker.__sig = sig;
+        setMarkerTarget(marker, w.location.latitude, w.location.longitude);
         this.markers.set(w.id, marker);
       }
-      marker.bindPopup(`<b>${w.id}</b><br>Status: ${w.status}`);
     }
 
-    this.counts.set(counts);
+    const prev = this.counts();
+    if (prev.OK !== counts.OK || prev.HELP !== counts.HELP
+        || prev.HELP_IN_PROGRESS !== counts.HELP_IN_PROGRESS || prev.EMERGENCY !== counts.EMERGENCY) {
+      this.counts.set(counts);
+    }
 
     // Dropdown-Liste nur bei Änderung der Anzahl neu setzen (kein Flackern pro Frame).
     if (this.watcherIdList().length !== watchers.length) {
@@ -424,16 +459,28 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   private renderChaperones(chaperones: Chaperone[]): void {
-    this.chaperones.set(chaperones);
+    // Dashboard-Liste nur bei echter Änderung aktualisieren (sonst Re-Render pro Frame).
+    const chapSig = JSON.stringify(
+      chaperones.map((c) => [c.id, c.mode, c.ignoreBlockers, c.ignoreZones, c.rescues, c.targetWatcherId]),
+    );
+    if (chapSig !== this.chapSig) {
+      this.chapSig = chapSig;
+      this.chaperones.set(chaperones);
+    }
 
     // Marker
     for (const c of chaperones) {
-      const latlng: [number, number] = [c.location.latitude, c.location.longitude];
       let marker = this.chaperoneMarkers.get(c.id);
+      const info = c.mode === 'OFF' ? 'Pause' : c.targetWatcherId ? `hilft ${c.targetWatcherId}` : 'bereit';
+      const popup = `<b>Helfer ${c.id}</b><br>${info}<br>Einsätze: ${c.rescues}`;
       if (marker) {
-        marker.setLatLng(latlng);
+        setMarkerTarget(marker, c.location.latitude, c.location.longitude);
+        if (marker.__info !== popup) {
+          marker.__info = popup;
+          marker.setPopupContent(popup);
+        }
       } else {
-        marker = L.marker(latlng, {
+        marker = L.marker([c.location.latitude, c.location.longitude], {
           icon: L.divIcon({
             html: '🦺',
             className: 'chaperone-icon',
@@ -441,27 +488,39 @@ export class MapComponent implements OnInit, OnDestroy {
             iconAnchor: [11, 11],
           }),
         }).addTo(this.map);
+        marker.bindPopup(popup);
+        marker.__info = popup;
+        setMarkerTarget(marker, c.location.latitude, c.location.longitude);
         this.chaperoneMarkers.set(c.id, marker);
       }
-      const info = c.mode === 'OFF' ? 'Pause' : c.targetWatcherId ? `hilft ${c.targetWatcherId}` : 'bereit';
-      marker.bindPopup(`<b>Helfer ${c.id}</b><br>${info}<br>Einsätze: ${c.rescues}`);
     }
 
-    // Einsatzbereiche
-    this.areaLayer.clearLayers();
-    for (const c of chaperones) {
-      if (c.mode === 'AREA' && c.area.length >= 3) {
-        L.polygon(
-          c.area.map((p) => [p.latitude, p.longitude]),
-          { color: '#8e44ad', fillColor: '#8e44ad', fillOpacity: 0.08, weight: 2, dashArray: '4,6' },
-        )
-          .bindTooltip(`Bereich ${c.id}`, { permanent: false })
-          .addTo(this.areaLayer);
+    // Einsatzbereiche nur bei Änderung neu zeichnen.
+    const areaSig = JSON.stringify(
+      chaperones.filter((c) => c.mode === 'AREA' && c.area.length >= 3).map((c) => [c.id, c.area]),
+    );
+    if (areaSig !== this.areaSig) {
+      this.areaSig = areaSig;
+      this.areaLayer.clearLayers();
+      for (const c of chaperones) {
+        if (c.mode === 'AREA' && c.area.length >= 3) {
+          L.polygon(
+            c.area.map((p) => [p.latitude, p.longitude]),
+            { color: '#8e44ad', fillColor: '#8e44ad', fillOpacity: 0.08, weight: 2, dashArray: '4,6' },
+          )
+            .bindTooltip(`Bereich ${c.id}`, { permanent: false })
+            .addTo(this.areaLayer);
+        }
       }
     }
   }
 
   private renderDirectives(directives: Directive[]): void {
+    const sig = JSON.stringify(directives.map((d) => [d.id, d.type, d.points, d.watcherIds.length]));
+    if (sig === this.dirSig) {
+      return;
+    }
+    this.dirSig = sig;
     this.directives.set(directives);
     this.vizLayer.clearLayers();
     for (const d of directives) {
@@ -487,6 +546,24 @@ export class MapComponent implements OnInit, OnDestroy {
       } else if (d.type === 'BLOCK') {
         L.polyline(latlngs, { color: '#2c3e50', weight: 7, opacity: 0.9 }).addTo(this.vizLayer);
       }
+    }
+  }
+
+  /** Log-Signal nur bei echter Änderung setzen (sonst Re-Render pro Frame). */
+  private updateLog(log: HelpEvent[]): void {
+    const sig = log.length + ':' + (log[0]?.timestamp ?? 0) + ':' + (log[log.length - 1]?.timestamp ?? 0);
+    if (sig !== this.logSig) {
+      this.logSig = sig;
+      this.log.set(log);
+    }
+  }
+
+  /** Chat-Signal nur bei echter Änderung setzen. */
+  private updateChat(chat: ChatMessage[]): void {
+    const sig = chat.length + ':' + (chat[chat.length - 1]?.id ?? '');
+    if (sig !== this.chatSig) {
+      this.chatSig = sig;
+      this.chat.set(chat);
     }
   }
 
@@ -565,6 +642,7 @@ export class MapComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.destroyed = true;
+    cancelAnimationFrame(this.animId);
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
     }
