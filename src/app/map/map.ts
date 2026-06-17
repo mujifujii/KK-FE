@@ -77,6 +77,7 @@ export class MapComponent implements OnInit, OnDestroy {
   readonly selectedChaperoneViewId = signal<string>('');
   readonly chat = signal<ChatMessage[]>([]);
   readonly chatPartner = signal<string>('');
+  readonly dashboardOpen = signal(true);
 
   // Auswahl & Zeichnen
   private selectedIds = new Set<string>();
