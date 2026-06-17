@@ -39,6 +39,14 @@ export interface HelpEvent {
   timestamp: number;
 }
 
+export interface ChatMessage {
+  id: string;
+  from: string;
+  to: string;
+  text: string;
+  timestamp: number;
+}
+
 export interface AssignDirectiveRequest {
   type: DirectiveType;
   points: Location[];

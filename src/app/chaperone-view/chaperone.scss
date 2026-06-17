@@ -74,24 +74,27 @@
   font-size: 13px;
 }
 
-.status-box {
-  text-align: center;
-  font-weight: 700;
-  font-size: 18px;
-  color: #06320f;
-  padding: 12px;
-  border-radius: 10px;
-  margin-bottom: 8px;
-}
-
-.instruction {
-  text-align: center;
-  font-size: 15px;
+.info {
   background: rgba(255, 255, 255, 0.08);
-  padding: 10px;
   border-radius: 10px;
+  padding: 8px 12px;
   margin-bottom: 12px;
 }
+
+.info .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+  padding: 3px 0;
+}
+
+.info .row span {
+  opacity: 0.7;
+}
+
+.busy { color: #e74c3c; }
+.idle { color: #2ecc71; }
 
 .section {
   margin-bottom: 12px;
@@ -103,51 +106,30 @@
   margin-bottom: 6px;
 }
 
-.status-btns {
+.seg {
   display: flex;
-  gap: 8px;
-}
-
-.status-btns button {
-  flex: 1;
-  border: 0;
-  border-radius: 8px;
-  padding: 12px 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  color: #fff;
-}
-
-.status-btns .ok { background: #2ecc71; color: #06320f; }
-.status-btns .help { background: #f39c12; color: #3a2600; }
-.status-btns .emergency { background: #e74c3c; }
-
-.dpad {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 6px;
 }
 
-.dpad-mid {
-  display: flex;
-  gap: 56px;
-}
-
-.dpad button {
-  width: 52px;
-  height: 44px;
+.seg button {
+  flex: 1;
   border: 0;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  font-size: 20px;
+  border-radius: 7px;
+  padding: 10px 4px;
+  font-size: 13px;
   cursor: pointer;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
 }
 
-.dpad button:hover {
-  background: rgba(255, 255, 255, 0.28);
+.seg button.active {
+  background: #2d8cf0;
+}
+
+.hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  opacity: 0.6;
 }
 
 .chat-select {

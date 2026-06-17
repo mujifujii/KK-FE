@@ -1,11 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_BASE } from './api-config';
 import {
   AssignDirectiveRequest,
   Chaperone,
   ChaperoneMode,
   ChaperoneSettingsRequest,
+  ChatMessage,
   Directive,
   Location,
   Watcher,
@@ -15,7 +17,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class WatcherApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:8080';
+  private readonly baseUrl = API_BASE;
 
   getWatchers(): Observable<Watcher[]> {
     return this.http.get<Watcher[]>(`${this.baseUrl}/watchers`);
@@ -69,5 +71,11 @@ export class WatcherApi {
 
   setChaperoneArea(id: string, points: Location[]): Observable<void> {
     return this.http.put<void>(`${this.baseUrl}/chaperones/${id}/area`, { points });
+  }
+
+  // --- Chat ---
+
+  sendChatMessage(from: string, to: string, text: string): Observable<ChatMessage> {
+    return this.http.post<ChatMessage>(`${this.baseUrl}/chat`, { from, to, text });
   }
 }

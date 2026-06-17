@@ -40,6 +40,19 @@
       </div>
     </div>
 
+    <div class="section">
+      <div class="label">💬 Chat mit Helfer</div>
+      <select class="chat-select" (change)="chatPartner.set($any($event.target).value)">
+        <option value="">— Helfer wählen —</option>
+        @for (cid of chaperoneIds(); track cid) {
+          <option [value]="cid">{{ cid }}</option>
+        }
+      </select>
+      @if (chatPartner()) {
+        <app-chat-box [me]="id" [partner]="chatPartner()" [partnerLabel]="chatPartner()" [messages]="chat()" />
+      }
+    </div>
+
     <a class="back" href="/">← zur Leitstelle</a>
   </div>
 </div>

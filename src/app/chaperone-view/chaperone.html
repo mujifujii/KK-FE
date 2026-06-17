@@ -1,0 +1,58 @@
+<div class="client">
+  <div #miniMap class="mini-map"></div>
+
+  <button class="recenter" (click)="recenter()" title="Karte auf mich zentrieren">📍 Auf mich</button>
+
+  <div class="panel">
+    <div class="head">
+      <span class="me">🦺 {{ id }}</span>
+      <span class="live" [class.on]="connected()">{{ connected() ? '● live' : '○ offline' }}</span>
+    </div>
+
+    @if (!found()) {
+      <div class="warn">Helfer „{{ id }}" nicht gefunden. Stimmt die ID in der URL?</div>
+    }
+
+    <div class="info">
+      <div class="row"><span>Auftrag:</span>
+        @if (targetWatcher()) {
+          <strong class="busy">→ versorgt {{ targetWatcher() }}</strong>
+        } @else {
+          <strong class="idle">bereit</strong>
+        }
+      </div>
+      <div class="row"><span>Einsätze:</span> <strong>{{ rescues() }}</strong></div>
+      <div class="row"><span>Modus:</span> <strong>{{ modeText() }}</strong></div>
+    </div>
+
+    <div class="section">
+      <div class="label">Modus</div>
+      <div class="seg">
+        <button [class.active]="mode() === 'AUTO'" (click)="setMode('AUTO')">Auto</button>
+        <button [class.active]="mode() === 'AREA'" (click)="setMode('AREA')">Bereich</button>
+        <button [class.active]="mode() === 'OFF'" (click)="setMode('OFF')">Aus</button>
+      </div>
+      <p class="hint">Den Einsatzbereich legst du in der Leitstelle fest.</p>
+    </div>
+
+    <div class="section">
+      <div class="label">💬 Chat mit Leitstelle</div>
+      <app-chat-box [me]="id" [partner]="'orch-1'" [partnerLabel]="'Leitstelle'" [messages]="chat()" />
+    </div>
+
+    <div class="section">
+      <div class="label">💬 Chat mit Person</div>
+      <select class="chat-select" (change)="chatWatcher.set($any($event.target).value)">
+        <option value="">— Person wählen —</option>
+        @for (wid of watcherIds(); track wid) {
+          <option [value]="wid">{{ wid }}</option>
+        }
+      </select>
+      @if (chatWatcher()) {
+        <app-chat-box [me]="id" [partner]="chatWatcher()" [partnerLabel]="chatWatcher()" [messages]="chat()" />
+      }
+    </div>
+
+    <a class="back" href="/">← zur Leitstelle</a>
+  </div>
+</div>
