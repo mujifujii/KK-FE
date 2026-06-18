@@ -8,7 +8,7 @@ function resolveBackendBase(): string {
     return 'http://localhost:8080';
   }
 
-  return 'https://embargo-sappy-fragment.ngrok-free.dev';
+  return 'https://nondeficiently-indeterministic-mignon.ngrok-free.dev';
 }
 
 export const API_BASE = resolveBackendBase();
