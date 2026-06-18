@@ -1,15 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-const CREDENTIALS: Record<string, string> = {
-  orchestrator1: '/leitstelle',
-  client1: '/client/w1',
-  client2: '/client/w2',
-  client3: '/client/w3',
-  chaperone1: '/chaperone/c1',
-  chaperone2: '/chaperone/c2',
-};
-
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -21,8 +12,24 @@ export class Login {
   readonly password = signal('');
   readonly error = signal(false);
 
+  private resolve(pw: string): string | null {
+    const p = pw.trim().toLowerCase();
+    if (p === 'orchestrator1' || p === 'orchestrator') {
+      return '/leitstelle';
+    }
+    const client = p.match(/^client(\d+)$/);
+    if (client) {
+      return `/client/w${client[1]}`;
+    }
+    const chaperone = p.match(/^chaperone(\d+)$/);
+    if (chaperone) {
+      return `/chaperone/c${chaperone[1]}`;
+    }
+    return null;
+  }
+
   submit(): void {
-    const route = CREDENTIALS[this.password().trim()];
+    const route = this.resolve(this.password());
     if (route) {
       this.error.set(false);
       this.router.navigateByUrl(route);
