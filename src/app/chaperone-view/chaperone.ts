@@ -82,7 +82,6 @@ export class ChaperoneView implements OnInit, OnDestroy {
     this.startMarkerAnimation();
   }
 
-  /** Bewegt die Marker per rAF flüssig zur letzten bekannten Position (~60 fps). */
   private startMarkerAnimation(): void {
     this.zone.runOutsideAngular(() => {
       const loop = (now: number) => {
@@ -135,7 +134,6 @@ export class ChaperoneView implements OnInit, OnDestroy {
       );
     }
 
-    // Personen (kleine Punkte)
     for (const w of watchers) {
       const color = STATUS_COLORS[w.status] ?? '#888888';
       let marker = this.markers.get(w.id);
@@ -153,7 +151,6 @@ export class ChaperoneView implements OnInit, OnDestroy {
       }
     }
 
-    // Helfer (🦺)
     for (const c of chaperones) {
       let marker = this.chaperoneMarkers.get(c.id);
       if (marker) {
@@ -167,7 +164,6 @@ export class ChaperoneView implements OnInit, OnDestroy {
       }
     }
 
-    // Goldener Ring um MICH
     const meLatLng: [number, number] = [me.location.latitude, me.location.longitude];
     if (this.meRing) {
       setMarkerTarget(this.meRing, me.location.latitude, me.location.longitude);
@@ -176,7 +172,6 @@ export class ChaperoneView implements OnInit, OnDestroy {
       setMarkerTarget(this.meRing, me.location.latitude, me.location.longitude);
     }
 
-    // Mein Einsatzbereich nur bei Änderung neu zeichnen
     const areaSig = me.mode === 'AREA' ? JSON.stringify(me.area) : '';
     if (areaSig !== this.areaSig) {
       this.areaSig = areaSig;
@@ -188,7 +183,6 @@ export class ChaperoneView implements OnInit, OnDestroy {
       }
     }
 
-    // Befehle der Leitstelle (Kontext)
     this.drawDirectives(directives);
 
     if (!this.centeredOnce) {
@@ -218,7 +212,6 @@ export class ChaperoneView implements OnInit, OnDestroy {
     }
   }
 
-  /** Chat-Signal nur bei echter Änderung setzen (sonst Re-Render pro Frame). */
   private updateChat(chat: ChatMessage[]): void {
     const sig = chat.length + ':' + (chat[chat.length - 1]?.id ?? '');
     if (sig !== this.chatSig) {
@@ -226,8 +219,6 @@ export class ChaperoneView implements OnInit, OnDestroy {
       this.chat.set(chat);
     }
   }
-
-  // --- Steuerung ---
 
   modeText(): string {
     return { AUTO: 'Automatisch (überall)', AREA: 'Nur im Bereich', OFF: 'Pause' }[this.mode()];

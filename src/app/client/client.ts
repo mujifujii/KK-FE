@@ -31,7 +31,7 @@ const STATUS_TEXT: Record<WatcherStatus, string> = {
   EMERGENCY: 'Notfall gemeldet',
 };
 
-const STEP = 0.0009; // Schrittweite der Pfeil-Steuerung
+const STEP = 0.0009;
 
 @Component({
   selector: 'app-client',
@@ -89,7 +89,6 @@ export class ClientView implements OnInit, OnDestroy {
     this.startMarkerAnimation();
   }
 
-  /** Bewegt die Marker per rAF flüssig zur letzten bekannten Position (~60 fps). */
   private startMarkerAnimation(): void {
     this.zone.runOutsideAngular(() => {
       const loop = (now: number) => {
@@ -135,7 +134,6 @@ export class ClientView implements OnInit, OnDestroy {
       this.chaperoneIds.set(chaperones.map((c) => c.id).sort());
     }
 
-    // ALLE Personen zeichnen – ich selbst hervorgehoben (goldener Ring, größer).
     for (const w of watchers) {
       const isMe = w.id === this.id;
       const color = STATUS_COLORS[w.status] ?? '#888888';
@@ -162,7 +160,6 @@ export class ClientView implements OnInit, OnDestroy {
       }
     }
 
-    // Helfer einblenden
     for (const c of chaperones) {
       let marker = this.chaperoneMarkers.get(c.id);
       if (marker) {
@@ -176,7 +173,6 @@ export class ClientView implements OnInit, OnDestroy {
       }
     }
 
-    // Karte einmal auf mich zentrieren (danach frei beweglich).
     if (!this.centeredOnce) {
       this.map.setView([me.location.latitude, me.location.longitude], 15, { animate: false });
       this.centeredOnce = true;
@@ -210,7 +206,6 @@ export class ClientView implements OnInit, OnDestroy {
     }
   }
 
-  /** Chat-Signal nur bei echter Änderung setzen (sonst Re-Render pro Frame). */
   private updateChat(chat: ChatMessage[]): void {
     const sig = chat.length + ':' + (chat[chat.length - 1]?.id ?? '');
     if (sig !== this.chatSig) {
@@ -238,8 +233,6 @@ export class ClientView implements OnInit, OnDestroy {
     return '✅ Keine Anweisung – du kannst dich frei bewegen.';
   }
 
-  // --- Steuerung (Testversion) ---
-
   statusColor(): string {
     return STATUS_COLORS[this.status()];
   }
@@ -259,7 +252,6 @@ export class ClientView implements OnInit, OnDestroy {
     this.api.updateWatcherLocation(this.id, this.myLoc.latitude + dLat, this.myLoc.longitude + dLng).subscribe();
   }
 
-  /** Zentriert die Karte wieder auf mich. */
   recenter(): void {
     if (this.myLoc) {
       this.map.setView([this.myLoc.latitude, this.myLoc.longitude], this.map.getZoom(), { animate: true });

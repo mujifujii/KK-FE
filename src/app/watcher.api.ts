@@ -23,8 +23,6 @@ export class WatcherApi {
     return this.http.get<Watcher[]>(`${this.baseUrl}/watchers`);
   }
 
-  // --- Watcher-Client (Testversion: selbst steuern) ---
-
   setWatcherControl(id: string, controlled: boolean): Observable<Watcher> {
     return this.http.post<Watcher>(`${this.baseUrl}/watchers/${id}/control`, { controlled });
   }
@@ -45,8 +43,6 @@ export class WatcherApi {
     return this.http.get<Directive[]>(`${this.baseUrl}/orchestrator/directives`);
   }
 
-  // --- Direktiven ---
-
   assignDirective(request: AssignDirectiveRequest): Observable<Directive> {
     return this.http.post<Directive>(`${this.baseUrl}/orchestrator/directive`, request);
   }
@@ -59,8 +55,6 @@ export class WatcherApi {
     return this.http.delete<void>(`${this.baseUrl}/orchestrator/directive`);
   }
 
-  // --- Chaperone-Steuerung ---
-
   updateChaperoneSettings(request: ChaperoneSettingsRequest): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/chaperones/settings`, request);
   }
@@ -72,8 +66,6 @@ export class WatcherApi {
   setChaperoneArea(id: string, points: Location[]): Observable<void> {
     return this.http.put<void>(`${this.baseUrl}/chaperones/${id}/area`, { points });
   }
-
-  // --- Chat ---
 
   sendChatMessage(from: string, to: string, text: string): Observable<ChatMessage> {
     return this.http.post<ChatMessage>(`${this.baseUrl}/chat`, { from, to, text });

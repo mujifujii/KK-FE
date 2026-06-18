@@ -8,7 +8,6 @@
       <span class="live" [class.on]="connected()">{{ connected() ? '● live' : '○ offline' }}</span>
     </div>
 
-    <!-- Lage (immer sichtbar) -->
     <div class="stats">
       <span class="stat ok">{{ counts().OK }} OK</span>
       <span class="stat help">{{ counts().HELP }} Hilfe</span>
@@ -16,7 +15,6 @@
       <span class="stat emergency">{{ counts().EMERGENCY }} Notfall</span>
     </div>
 
-    <!-- Reiter -->
     <div class="tabs">
       <button [class.active]="activeTab() === 'steuern'" (click)="activeTab.set('steuern')">Steuern</button>
       <button [class.active]="activeTab() === 'helfer'" (click)="activeTab.set('helfer')">Helfer</button>
@@ -25,7 +23,6 @@
       <button [class.active]="activeTab() === 'log'" (click)="activeTab.set('log')">Log</button>
     </div>
 
-    <!-- TAB: Steuern -->
     @if (activeTab() === 'steuern') {
       @if (controlledId(); as cid) {
         <section class="panel control">
@@ -101,7 +98,6 @@
       </section>
     }
 
-    <!-- TAB: Helfer -->
     @if (activeTab() === 'helfer') {
       <section class="panel">
         <h4>🦺 Helfer ({{ chaperones().length }})</h4>
@@ -156,7 +152,6 @@
       </section>
     }
 
-    <!-- TAB: Chat -->
     @if (activeTab() === 'chat') {
       <section class="panel">
         <h4>💬 Chat mit Helfer</h4>
@@ -174,7 +169,6 @@
       </section>
     }
 
-    <!-- TAB: Sichten -->
     @if (activeTab() === 'sichten') {
       <section class="panel">
         <h4>🎮 Spieler-Sicht</h4>
@@ -202,7 +196,6 @@
       </section>
     }
 
-    <!-- TAB: Log -->
     @if (activeTab() === 'log') {
       <section class="panel">
         <h4>📋 Einsatz-Log</h4>

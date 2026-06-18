@@ -2,11 +2,6 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { WatcherApi } from '../watcher.api';
 import { ChatMessage } from '../watcher.model';
 
-/**
- * Wiederverwendbare Chat-Box für eine 1:1-Konversation.
- * Bekommt die eigene id (me), den Gesprächspartner und ALLE Nachrichten,
- * filtert daraus die gemeinsame Konversation und sendet über die API.
- */
 @Component({
   selector: 'app-chat-box',
   standalone: true,

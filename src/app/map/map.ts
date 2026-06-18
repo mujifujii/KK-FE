@@ -25,7 +25,6 @@ import {
   WatcherStatus,
 } from '../watcher.model';
 
-// Leaflet (+ heat-Plugin) werden per CDN in index.html geladen -> global verfügbar.
 declare const L: any;
 
 type Tool = 'none' | 'select' | 'gather' | 'path' | 'zone' | 'block' | 'charea';
@@ -56,7 +55,6 @@ export class MapComponent implements OnInit, OnDestroy {
   private readonly chaperoneMarkers = new Map<string, any>();
   private latestWatchers: Watcher[] = [];
 
-  // Animation + Änderungs-Caches (gegen unnötiges Neu-Rendern pro Frame)
   private animId = 0;
   private dirSig = '';
   private areaSig = '';
@@ -64,13 +62,11 @@ export class MapComponent implements OnInit, OnDestroy {
   private logSig = '';
   private chatSig = '';
 
-  // WebSocket
   private socket?: WebSocket;
   private reconnectTimer?: ReturnType<typeof setTimeout>;
   private destroyed = false;
   readonly connected = signal(false);
 
-  // UI-Status
   readonly watcherCount = signal(0);
   readonly selectedCount = signal(0);
   readonly tool = signal<Tool>('none');
@@ -80,10 +76,10 @@ export class MapComponent implements OnInit, OnDestroy {
   readonly directives = signal<Directive[]>([]);
   readonly chaperones = signal<Chaperone[]>([]);
   readonly log = signal<HelpEvent[]>([]);
-  readonly areaTarget = signal<string | null>(null); // welcher Helfer bekommt gerade einen Bereich
-  readonly controlledId = signal<string | null>(null);     // welche Person gerade selbst gesteuert wird
+  readonly areaTarget = signal<string | null>(null);
+  readonly controlledId = signal<string | null>(null);
   readonly controlledStatus = signal<WatcherStatus | null>(null);
-  readonly watcherIdList = signal<string[]>([]);           // für das Spieler-Sicht-Dropdown
+  readonly watcherIdList = signal<string[]>([]);
   readonly selectedViewId = signal<string>('');
   readonly selectedChaperoneViewId = signal<string>('');
   readonly chat = signal<ChatMessage[]>([]);
@@ -91,7 +87,6 @@ export class MapComponent implements OnInit, OnDestroy {
   readonly dashboardOpen = signal(true);
   readonly activeTab = signal<'steuern' | 'helfer' | 'chat' | 'sichten' | 'log'>('steuern');
 
-  // Auswahl & Zeichnen
   private selectedIds = new Set<string>();
   private dragStart: any = null;
   private freehand: any[] = [];
@@ -120,9 +115,9 @@ export class MapComponent implements OnInit, OnDestroy {
     this.startMarkerAnimation();
   }
 
-  /** Bewegt die Marker per rAF flüssig zur letzten bekannten Position (~60 fps). */
   private startMarkerAnimation(): void {
-    // Außerhalb der Angular-Zone -> löst KEINE Change-Detection pro Frame aus.
+
+    // außerhalb von Angular -> keine Change Detection bei jedem Frame
     this.zone.runOutsideAngular(() => {
       const loop = (now: number) => {
         this.markers.forEach((m) => tweenMarker(m, now));
@@ -157,8 +152,6 @@ export class MapComponent implements OnInit, OnDestroy {
       }
     };
   }
-
-  // --- Werkzeuge & Ziel ---
 
   setTool(tool: Tool): void {
     this.tool.set(this.tool() === tool ? 'none' : tool);
@@ -201,7 +194,6 @@ export class MapComponent implements OnInit, OnDestroy {
     this.api.removeDirective(id).subscribe();
   }
 
-  /** Wechselt zur Spieler-Sicht der im Dropdown gewählten Person. */
   openPlayerView(): void {
     const id = this.selectedViewId();
     if (id) {
@@ -209,7 +201,6 @@ export class MapComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Wechselt zur Helfer-Sicht des im Dropdown gewählten Chaperones. */
   openChaperoneView(): void {
     const id = this.selectedChaperoneViewId();
     if (id) {
@@ -222,14 +213,11 @@ export class MapComponent implements OnInit, OnDestroy {
     return Number.isNaN(n) ? 0 : n;
   }
 
-  // --- Eine Person selbst steuern (innerhalb der Leitstellen-Ansicht) ---
-
   readonly step = 0.0009;
 
-  /** Klick auf eine Person (ohne aktives Werkzeug) = übernehmen. */
   private onWatcherClick(id: string): void {
     if (this.tool() !== 'none') {
-      return; // beim Zeichnen/Auswählen nicht stören
+      return;
     }
     this.takeControl(id);
   }
@@ -276,8 +264,6 @@ export class MapComponent implements OnInit, OnDestroy {
       .subscribe();
   }
 
-  // --- Chaperone-Steuerung ---
-
   toggleChaperone(c: Chaperone, field: 'blockers' | 'zones', value: boolean): void {
     this.api
       .updateChaperoneSettings({
@@ -302,15 +288,12 @@ export class MapComponent implements OnInit, OnDestroy {
     this.api.setChaperoneMode(c.id, mode).subscribe();
   }
 
-  /** Startet das Zeichnen eines Einsatzbereichs für diesen Helfer. */
   startAreaAssign(c: Chaperone): void {
     this.areaTarget.set(c.id);
     this.tool.set('charea');
     this.map.dragging.disable();
     this.clearDraft();
   }
-
-  // --- Leaflet-Maus-Events ---
 
   private onDown(e: any): void {
     const tool = this.tool();
@@ -377,8 +360,6 @@ export class MapComponent implements OnInit, OnDestroy {
     this.assign('GATHER', [this.toLocation(e.latlng)]);
   }
 
-  // --- Auswahl & Zuweisung ---
-
   private selectWithin(a: any, b: any): void {
     const bounds = L.latLngBounds(a, b);
     this.selectedIds = new Set(
@@ -395,8 +376,6 @@ export class MapComponent implements OnInit, OnDestroy {
       !global && this.target() === 'selection' ? Array.from(this.selectedIds) : [];
     this.api.assignDirective({ type, points, watcherIds }).subscribe();
   }
-
-  // --- Rendern ---
 
   private renderWatchers(watchers: Watcher[]): void {
     this.latestWatchers = watchers;
@@ -448,7 +427,6 @@ export class MapComponent implements OnInit, OnDestroy {
       this.counts.set(counts);
     }
 
-    // Dropdown-Liste nur bei Änderung der Anzahl neu setzen (kein Flackern pro Frame).
     if (this.watcherIdList().length !== watchers.length) {
       this.watcherIdList.set(watchers.map((w) => w.id).sort((a, b) => this.idNum(a) - this.idNum(b)));
     }
@@ -459,7 +437,7 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   private renderChaperones(chaperones: Chaperone[]): void {
-    // Dashboard-Liste nur bei echter Änderung aktualisieren (sonst Re-Render pro Frame).
+
     const chapSig = JSON.stringify(
       chaperones.map((c) => [c.id, c.mode, c.ignoreBlockers, c.ignoreZones, c.rescues, c.targetWatcherId]),
     );
@@ -468,7 +446,6 @@ export class MapComponent implements OnInit, OnDestroy {
       this.chaperones.set(chaperones);
     }
 
-    // Marker
     for (const c of chaperones) {
       let marker = this.chaperoneMarkers.get(c.id);
       const info = c.mode === 'OFF' ? 'Pause' : c.targetWatcherId ? `hilft ${c.targetWatcherId}` : 'bereit';
@@ -495,7 +472,6 @@ export class MapComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Einsatzbereiche nur bei Änderung neu zeichnen.
     const areaSig = JSON.stringify(
       chaperones.filter((c) => c.mode === 'AREA' && c.area.length >= 3).map((c) => [c.id, c.area]),
     );
@@ -549,7 +525,6 @@ export class MapComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Log-Signal nur bei echter Änderung setzen (sonst Re-Render pro Frame). */
   private updateLog(log: HelpEvent[]): void {
     const sig = log.length + ':' + (log[0]?.timestamp ?? 0) + ':' + (log[log.length - 1]?.timestamp ?? 0);
     if (sig !== this.logSig) {
@@ -558,7 +533,6 @@ export class MapComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Chat-Signal nur bei echter Änderung setzen. */
   private updateChat(chat: ChatMessage[]): void {
     const sig = chat.length + ':' + (chat[chat.length - 1]?.id ?? '');
     if (sig !== this.chatSig) {
@@ -575,8 +549,6 @@ export class MapComponent implements OnInit, OnDestroy {
       this.heatLayer = (L as any).heatLayer(points, { radius: 28, blur: 18, maxZoom: 14 }).addTo(this.map);
     }
   }
-
-  // --- Anzeige-Helfer ---
 
   allPass(field: 'blockers' | 'zones'): boolean {
     const list = this.chaperones();
@@ -600,8 +572,6 @@ export class MapComponent implements OnInit, OnDestroy {
   formatTime(ts: number): string {
     return new Date(ts).toLocaleTimeString();
   }
-
-  // --- Zeichen-Helfer ---
 
   private drawDraftLine(latlngs: any[], color: string): void {
     this.draftLayer?.remove();

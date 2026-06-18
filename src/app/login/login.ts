@@ -1,10 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-/**
- * Einfacher Frontend-Login: Passwort -> Ziel-View.
- * (Reine Demo-„Authentifizierung", kein echter Schutz.)
- */
 const CREDENTIALS: Record<string, string> = {
   orchestrator1: '/leitstelle',
   client1: '/client/w1',

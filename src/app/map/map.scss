@@ -50,7 +50,6 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
-/* Mobil: Dashboard schmaler/niedriger, damit die Karte sichtbar bleibt */
 @media (max-width: 640px) {
   .dashboard {
     width: calc(100vw - 24px);
@@ -99,7 +98,6 @@
   opacity: 1;
 }
 
-/* Lage */
 .stats {
   display: flex;
   flex-wrap: wrap;
@@ -119,7 +117,6 @@
 .stat.progress { background: #3498db; color: #fff; }
 .stat.emergency { background: #e74c3c; color: #fff; }
 
-/* Reiter */
 .tabs {
   display: flex;
   gap: 4px;
@@ -144,7 +141,6 @@
   font-weight: 600;
 }
 
-/* Ziel-Umschalter */
 .seg {
   display: flex;
   gap: 6px;
@@ -165,7 +161,6 @@
   background: #2d8cf0;
 }
 
-/* Werkzeuge */
 .tools {
   display: flex;
   flex-wrap: wrap;
@@ -213,7 +208,6 @@
   border-radius: 6px;
 }
 
-/* Aktive Befehle */
 .row {
   display: flex;
   align-items: center;
@@ -236,7 +230,6 @@
   background: #e74c3c;
 }
 
-/* Helfer / Chaperone */
 .bulk {
   display: flex;
   flex-wrap: wrap;
@@ -293,7 +286,6 @@
   opacity: 0.6;
 }
 
-/* Toggle-Pill: grau = aus, grün = an */
 .pill {
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.08);
@@ -325,7 +317,6 @@
   filter: brightness(1.1);
 }
 
-/* Helfer-Modul: Modus, Bereich, Log */
 .chap-row {
   display: flex;
   align-items: center;
@@ -383,7 +374,6 @@
   min-width: 64px;
 }
 
-/* Spieler-Sicht öffnen */
 .open-client {
   display: flex;
   gap: 6px;
@@ -432,7 +422,6 @@
   color: #000;
 }
 
-/* Person selbst steuern */
 .panel.control {
   background: rgba(241, 196, 15, 0.12);
   border-radius: 8px;
